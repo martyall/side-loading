@@ -15,16 +15,15 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 
 
-module Data.SideLoaded where
---    ( NamedDependency(..)
---    , Deflated
---    , Inflatable(..)
---    , DependencyList(NilDeps)
---    , HasDependencies(..)
---    , SideLoaded
---    , inflate
---    , (&:)
---    ) where
+module Data.SideLoaded
+    ( NamedDependency
+    , Inflatable(..)
+    , DependencyList(NilDeps)
+    , HasDependencies(..)
+    , SideLoaded
+    , inflate
+    , (&:)
+    ) where
 
 import Data.Aeson (ToJSON(..), Value, (.=), object)
 import Data.Kind
@@ -53,15 +52,18 @@ infixr 5 :&:
      -> DependencyList m (b:bs) (f:fs)
 (&:) b rest = b :&: rest
 
+-- | labels for the objects created in the dependency mapping.
 type family NamedDependency (a :: Type) :: Symbol
+
+--------------------------------------------------------------------------------
+-- | JSON Instances
+--------------------------------------------------------------------------------
 
 class ToKeyValueList a where
   toKeyValueList :: a -> [(Text, Value)]
 
 instance ToKeyValueList (DependencyList Identity '[] '[]) where
   toKeyValueList _ = []
-
--- | JSON instances
 
 instance ( ToJSON d
          , KnownSymbol (NamedDependency d)
@@ -86,9 +88,12 @@ instance ToKeyValueList (DependencyList Identity ds ds) => ToJSON (DependencyLis
 class Inflatable m base full | base m -> full where
   inflator :: base -> m full
 
+-- | Anything can be expanded into itself in the trivial context
 instance Inflatable Identity base base where
   inflator = return
 
+-- | Indicate that a type has dependencies, and supply the uninflated types
+-- (order matters here).
 class HasDependencies m a full | a -> full where
   type DependencyBase a :: [*]
   getDependencies :: a -> DependencyList m (DependencyBase a) full
@@ -97,6 +102,7 @@ class HasDependencies m a full | a -> full where
 ---- | Side Loading
 ----------------------------------------------------------------------------------
 
+-- | Run the inflators.
 sequenceDependencyList :: Monad m => DependencyList m bs fs -> m (DependencyList Identity fs fs)
 sequenceDependencyList NilDeps = return NilDeps
 sequenceDependencyList (b :&: rest) = do
@@ -112,7 +118,7 @@ instance ( ToJSON (DependencyList Identity deps deps)
   toJSON (SideLoaded _data deps) = object [ "data" .= toJSON _data
                                           , "dependencies" .= toJSON deps
                                           ]
-
+-- | Run the inflators and wrap in the SideLoaded type.
 inflate :: ( HasDependencies m a fs
            , bs ~ DependencyBase a
            , CanInflate m bs fs
