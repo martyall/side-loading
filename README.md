@@ -1,5 +1,8 @@
 # side-loading
 
+This is a _really_ small library for doing server side loading for JSON using `Aeson`. Do you also need versioning? If so check out 
+[aeson-versioned](https://github.com/benweitzman/servant-aeson-versioned) and [aeson-versioned-sideloading](https://github.com/benweitzman/aeson-versioned-sideloading)
+
 ```haskell
 
 -- | Person
@@ -57,7 +60,7 @@ instance HasDependencies IO Album [Person, [Photo]] where
 -- | instantiations
 
 john :: Person
-john = Person 1 "Johnathon"
+john = Person 1 "John"
 
 photos :: [Photo]
 photos = [Photo 1 "At the Beach" 1 1, Photo 2 "In the Mountains" 1 1]
@@ -94,7 +97,7 @@ Then the `toJSON . inflate $ album` gives us
       },
       {
         "artistId": 1,
-        "photoCaption": In the Mountains",
+        "photoCaption": "In the Mountains",
         "photoAlbumId": 1,
         "photoId": 2
       }
