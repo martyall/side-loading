@@ -1,5 +1,8 @@
 # side-loading
 
+This is a _really_ small library for doing server side loading for JSON using `Aeson`. Do you also need versioning? If so check out 
+[aeson-versioned](https://github.com/benweitzman/servant-aeson-versioned) and [aeson-versioned-sideloading](https://github.com/benweitzman/aeson-versioned-sideloading)
+
 ```haskell
 
 -- | Person
