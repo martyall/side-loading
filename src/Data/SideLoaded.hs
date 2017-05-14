@@ -42,8 +42,6 @@ data DependencyList :: (* -> *) -> [*] -> [*] -> * where
   NilDeps :: DependencyList m '[] '[]
   (:&:) :: Inflatable m b f => b -> DependencyList m bs fs -> DependencyList m (b:bs) (f:fs)
 
-infixr 5 :&:
-
 (&:) :: ( Monad m
         , Inflatable m b f
         )
@@ -51,6 +49,8 @@ infixr 5 :&:
      -> DependencyList m bs fs
      -> DependencyList m (b:bs) (f:fs)
 (&:) b rest = b :&: rest
+
+infixr 5 &:
 
 -- | labels for the objects created in the dependency mapping.
 type family NamedDependency (a :: Type) :: Symbol

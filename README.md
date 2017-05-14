@@ -52,7 +52,7 @@ instance ToJSON Album
 
 instance HasDependencies IO Album [Person, [Photo]] where
   type DependencyBase Album = [PersonId, [PhotoId]]
-  getDependencies (Album _ _ owner pIds) = owner &: (pIds &: NilDeps)
+  getDependencies (Album _ _ owner pIds) = owner &: pIds &: NilDeps
 
 -- | instantiations
 
