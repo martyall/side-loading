@@ -60,7 +60,7 @@ instance HasDependencies IO Album [Person, [Photo]] where
 -- | instantiations
 
 john :: Person
-john = Person 1 "Johnathon"
+john = Person 1 "John"
 
 photos :: [Photo]
 photos = [Photo 1 "At the Beach" 1 1, Photo 2 "In the Mountains" 1 1]
