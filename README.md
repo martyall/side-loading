@@ -94,7 +94,7 @@ Then the `toJSON . inflate $ album` gives us
       },
       {
         "artistId": 1,
-        "photoCaption": In the Mountains",
+        "photoCaption": "In the Mountains",
         "photoAlbumId": 1,
         "photoId": 2
       }
