@@ -18,7 +18,9 @@
 module Data.SideLoadingSpec (spec) where
 
 import Data.SideLoaded
-import Data.Aeson (ToJSON(..), encode)
+import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), encode, decode, (.:))
+import Data.Aeson.Types (Parser)
+import Data.Maybe (isJust)
 import GHC.Generics (Generic)
 import GHC.TypeLits
 import Test.Hspec
@@ -28,14 +30,17 @@ spec :: Spec
 spec = do
   describe "it should inflate albums" $ do
     it "can print the correct result" $ do
-      a <- inflate album
-      print . encode $ toJSON a
-      return ()
+      serializedAlbum <- fmap (encode . toJSON) . inflate $ album
+      let (mpair :: Maybe (Person, [Photo])) = decode serializedAlbum
+      mpair `shouldSatisfy` isJust
+      let (Just(o, ps)) = mpair
+      o `shouldBe` john
+      ps `shouldBe` photos
 
 --------------------------------------------------------------------------------
 -- | Photo
 
-newtype PhotoId = PhotoId Int deriving (Eq, Show, Num, ToJSON)
+newtype PhotoId = PhotoId Int deriving (Eq, Show, Num, ToJSON, FromJSON)
 
 type instance NamedDependency [Photo] = "photos"
 
@@ -47,6 +52,7 @@ data Photo =
         } deriving (Eq, Show, Generic)
 
 instance ToJSON Photo
+instance FromJSON Photo
 
 photos = [Photo 1 "At the Beach" 1 1, Photo 2 "In the Mountains" 1 1]
 
@@ -55,7 +61,7 @@ instance Inflatable IO [PhotoId] [Photo] where
 
 -- | Person
 
-newtype PersonId = PersonId Int deriving (Eq, Show, Num, ToJSON)
+newtype PersonId = PersonId Int deriving (Eq, Show, Num, ToJSON, FromJSON)
 
 type instance NamedDependency Person = "person"
 
@@ -65,6 +71,7 @@ data Person =
          } deriving (Eq, Show, Generic)
 
 instance ToJSON Person
+instance FromJSON Person
 
 john :: Person
 john = Person 1 "Johnathon"
@@ -74,7 +81,7 @@ instance Inflatable IO PersonId Person where
 
 -- | Albums
 
-newtype AlbumId = AlbumId Int deriving (Eq, Show, Num, ToJSON)
+newtype AlbumId = AlbumId Int deriving (Eq, Show, Num, ToJSON, FromJSON)
 
 data Album =
   Album { albumId :: AlbumId
@@ -91,3 +98,11 @@ instance HasDependencies IO Album [Person, [Photo]] where
 
 album :: Album
 album = Album 1 "Vacations" 1 [1,2]
+
+--------------------------------------------------------------------------------
+instance {-# OVERLAPPING #-} FromJSON (Person, [Photo]) where
+  parseJSON (Object o) =
+    (,) <$> ((o .: "dependencies") >>= (.: "person"))
+        <*> ((o .: "dependencies") >>= (.: "photos"))
+  parseJSON invalid = fail "could not parse dependencies"
+
