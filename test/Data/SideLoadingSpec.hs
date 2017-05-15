@@ -100,6 +100,7 @@ album :: Album
 album = Album 1 "Vacations" 1 [1,2]
 
 --------------------------------------------------------------------------------
+
 instance {-# OVERLAPPING #-} FromJSON (Person, [Photo]) where
   parseJSON (Object o) =
     (,) <$> ((o .: "dependencies") >>= (.: "person"))

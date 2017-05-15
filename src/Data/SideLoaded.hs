@@ -52,8 +52,52 @@ data DependencyList :: (* -> *) -> [*] -> [*] -> * where
 
 infixr 5 &:
 
--- | labels for the objects created in the dependency mapping.
+-- | Labels for the objects created in the dependency mapping. See JSON instances.
 type family NamedDependency (a :: Type) :: Symbol
+
+--------------------------------------------------------------------------------
+-- | Inflatables
+--------------------------------------------------------------------------------
+
+-- | Inflatable represents an entity which can be expanded inside of a context @m@.
+class Inflatable m base full | base m -> full where
+  inflator :: base -> m full
+
+-- | Anything can be expanded into itself in the trivial context
+instance Inflatable Identity base base where
+  inflator = return
+
+-- | Indicate that a type has dependencies, and supply the uninflated types
+-- (order matters here).
+class HasDependencies m a full | a -> full where
+  type DependencyBase a :: [*]
+  getDependencies :: a -> DependencyList m (DependencyBase a) full
+
+----------------------------------------------------------------------------------
+---- | Side Loading
+----------------------------------------------------------------------------------
+
+-- | Run the inflator in a monadic sequence.
+sequenceDependencyList :: Monad m => DependencyList m bs fs -> m (DependencyList Identity fs fs)
+sequenceDependencyList NilDeps = return NilDeps
+sequenceDependencyList (b :&: rest) = do
+  f <- inflator b
+  fs <- sequenceDependencyList rest
+  return (f :&: fs)
+
+data SideLoaded a (deps :: [*]) = SideLoaded a (DependencyList Identity deps deps)
+
+-- | Run the inflators and wrap in the SideLoaded type.
+inflate :: ( HasDependencies m a fs
+           , bs ~ DependencyBase a
+           , CanInflate m bs fs
+           , Monad m
+           )
+        => a
+        -> m (SideLoaded a fs)
+inflate value =
+  let dependencies = getDependencies value
+  in sequenceDependencyList dependencies >>= \deps -> return $ SideLoaded value deps
 
 --------------------------------------------------------------------------------
 -- | JSON Instances
@@ -77,59 +121,12 @@ instance ( ToJSON d
 instance ToKeyValueList (DependencyList Identity ds ds) => ToJSON (DependencyList Identity ds ds) where
   toJSON ds = object $ toKeyValueList ds
 
---------------------------------------------------------------------------------
--- | Inflatables
---------------------------------------------------------------------------------
-
---type family Deflated full = base | base -> full
---
--- | Inflatable represents an entity which can be expanded inside of a
--- context @m@.
-class Inflatable m base full | base m -> full where
-  inflator :: base -> m full
-
--- | Anything can be expanded into itself in the trivial context
-instance Inflatable Identity base base where
-  inflator = return
-
--- | Indicate that a type has dependencies, and supply the uninflated types
--- (order matters here).
-class HasDependencies m a full | a -> full where
-  type DependencyBase a :: [*]
-  getDependencies :: a -> DependencyList m (DependencyBase a) full
-
-----------------------------------------------------------------------------------
----- | Side Loading
-----------------------------------------------------------------------------------
-
--- | Run the inflators.
-sequenceDependencyList :: Monad m => DependencyList m bs fs -> m (DependencyList Identity fs fs)
-sequenceDependencyList NilDeps = return NilDeps
-sequenceDependencyList (b :&: rest) = do
-  f <- inflator b
-  fs <- sequenceDependencyList rest
-  return (f :&: fs)
-
-data SideLoaded a (deps :: [*]) = SideLoaded a (DependencyList Identity deps deps)
-
 instance ( ToJSON (DependencyList Identity deps deps)
          , ToJSON a
          ) => ToJSON (SideLoaded a deps) where
   toJSON (SideLoaded _data deps) = object [ "data" .= toJSON _data
                                           , "dependencies" .= toJSON deps
                                           ]
--- | Run the inflators and wrap in the SideLoaded type.
-inflate :: ( HasDependencies m a fs
-           , bs ~ DependencyBase a
-           , CanInflate m bs fs
-           , Monad m
-           )
-        => a
-        -> m (SideLoaded a fs)
-inflate value =
-  let dependencies = getDependencies value
-  in sequenceDependencyList dependencies >>= \deps -> return $ SideLoaded value deps
-
 ----------------------------------------------------------------------------------
 ---- Type Families
 ----------------------------------------------------------------------------------
