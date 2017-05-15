@@ -69,9 +69,9 @@ instance Inflatable Identity base base where
 
 -- | Indicate that a type has dependencies, and supply the uninflated types
 -- (order matters here).
-class HasDependencies m a full | a -> full where
+class HasDependencies m a fs | a -> fs where
   type DependencyBase a :: [*]
-  getDependencies :: a -> DependencyList m (DependencyBase a) full
+  getDependencies :: a -> DependencyList m (DependencyBase a) fs
 
 ----------------------------------------------------------------------------------
 ---- | Side Loading
