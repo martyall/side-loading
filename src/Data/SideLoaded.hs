@@ -55,6 +55,15 @@ infixr 5 &:
 -- | Labels for the objects created in the dependency mapping. See JSON instances.
 type family NamedDependency (a :: Type) :: Symbol
 
+class ProjectDependency bs b where
+  projectDep :: Proxy b -> DependencyList m bs fs -> b
+
+instance ProjectDependency (b : bs) b where
+  projectDep _ (b :&: _) = b
+
+instance ProjectDependency bs b => ProjectDependency (a : bs) b where
+  projectDep p (_ :&: rest) = projectDep p rest
+
 --------------------------------------------------------------------------------
 -- | Inflatables
 --------------------------------------------------------------------------------
@@ -121,7 +130,8 @@ instance ( ToJSON d
 instance ToKeyValueList (DependencyList Identity ds ds) => ToJSON (DependencyList Identity ds ds) where
   toJSON ds = object $ toKeyValueList ds
 
-instance ( ToJSON (DependencyList Identity deps deps)
+instance {-# OVERLAPPABLE #-}
+         ( ToJSON (DependencyList Identity deps deps)
          , ToJSON a
          ) => ToJSON (SideLoaded a deps) where
   toJSON (SideLoaded _data deps) = object [ "data" .= toJSON _data
