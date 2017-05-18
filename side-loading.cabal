@@ -20,7 +20,6 @@ library
                      , aeson
                      , singletons
                      , text
-                     , type-list
   default-language:    Haskell2010
 
 test-suite side-loading-test

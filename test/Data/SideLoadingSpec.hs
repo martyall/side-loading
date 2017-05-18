@@ -43,11 +43,43 @@ spec = do
 
 
     it "can do projections" $ do
-      serializedAlbum <- inflate $ album
-      getDependency (Proxy @ [Photo]) serializedAlbum `shouldBe` photos
-      getDependency (Proxy @ Person) serializedAlbum `shouldBe` john
+      inflatedAlbum <- inflate $ album
+      getDependency (Proxy @ [Photo]) inflatedAlbum `shouldBe` photos
+      getDependency (Proxy @ Person) inflatedAlbum `shouldBe` john
+
+    it "can do some traversals" $ do
+      inflatedAlbum <- inflate $ album
+      let ps = getDependency (Proxy @ [Photo]) inflatedAlbum
+      length ps `shouldSatisfy` (>= 1)
+      let (p:rest) = ps
+      inflatedPhoto <- inflate p
+      getDependency (Proxy @ Person) inflatedPhoto `shouldBe` john
 
 --------------------------------------------------------------------------------
+-- | Person
+
+newtype PersonId = PersonId Int deriving (Eq, Show, Num, ToJSON, FromJSON)
+
+type instance NamedDependency Person = "person"
+
+data Person =
+  Person { personId :: PersonId
+         , personName :: String
+         } deriving (Eq, Show, Generic)
+
+instance ToJSON Person
+instance FromJSON Person
+
+john :: Person
+john =  Person 1 "John"
+
+john' :: IORef Person
+john' = unsafePerformIO $ newIORef john
+{-# NOINLINE john #-}
+
+instance Inflatable IO PersonId Person where
+  inflator = const $ readIORef john'
+
 -- | Photo
 
 newtype PhotoId = PhotoId Int deriving (Eq, Show, Num, ToJSON, FromJSON)
@@ -74,29 +106,9 @@ photos' = unsafePerformIO $ newIORef photos
 instance Inflatable IO [PhotoId] [Photo] where
   inflator = const $ readIORef photos'
 
--- | Person
-
-newtype PersonId = PersonId Int deriving (Eq, Show, Num, ToJSON, FromJSON)
-
-type instance NamedDependency Person = "person"
-
-data Person =
-  Person { personId :: PersonId
-         , personName :: String
-         } deriving (Eq, Show, Generic)
-
-instance ToJSON Person
-instance FromJSON Person
-
-john :: Person
-john =  Person 1 "John"
-
-john' :: IORef Person
-john' = unsafePerformIO $ newIORef john
-{-# NOINLINE john #-}
-
-instance Inflatable IO PersonId Person where
-  inflator = const $ readIORef john'
+instance HasDependencies IO Photo '[Album, Person] where
+  type DependencyBase Photo = '[AlbumId, PersonId]
+  getDependencies (Photo _ _ aId pId) = aId &: pId &: NilDeps
 
 -- | Albums
 
@@ -118,11 +130,15 @@ instance HasDependencies IO Album [Person, [Photo]] where
 album :: Album
 album = Album 1 "Vacations" 1 [1,2]
 
---------------------------------------------------------------------------------
+album' :: IORef Album
+album' = unsafePerformIO $ newIORef album
+{-# NOINLINE album' #-}
+
+instance Inflatable IO AlbumId Album where
+  inflator = const $ readIORef album'
 
 instance {-# OVERLAPPING #-} FromJSON (Person, [Photo]) where
   parseJSON (Object o) =
     (,) <$> ((o .: "dependencies") >>= (.: "person"))
         <*> ((o .: "dependencies") >>= (.: "photos"))
   parseJSON invalid = fail "could not parse dependencies"
-

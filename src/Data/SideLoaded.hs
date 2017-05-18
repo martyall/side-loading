@@ -33,7 +33,6 @@ import Data.Functor.Identity (Identity(..))
 import Data.Singletons (Apply, type (~>))
 import Data.Singletons.TypeLits
 import Data.Text (Text, pack)
-import Data.Type.List (Map, Map')
 
 --------------------------------------------------------------------------------
 -- | Dependency Lists
@@ -53,7 +52,7 @@ data DependencyList :: (* -> *) -> [*] -> [*] -> * where
 
 infixr 5 &:
 
--- | Labels for the objects created in the dependency mapping. See JSON instances.
+-- | Labels for the objects created in the dependency mapping. Useful for JSON instances.
 type family NamedDependency (a :: Type) :: Symbol
 
 class ProjectDependency bs b where
