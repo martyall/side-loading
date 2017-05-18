@@ -22,7 +22,7 @@ module Data.SideLoaded
     , HasDependencies(..)
     , SideLoaded(..)
     , inflate
-    , projectDependency
+    , getDependency
     , (&:)
     ) where
 
@@ -109,11 +109,11 @@ inflate value =
   let dependencies = getDependencies value
   in sequenceDependencyList dependencies >>= \deps -> return $ SideLoaded value deps
 
-projectDependency :: ProjectDependency deps dep
-                  => proxy dep
-                  -> SideLoaded a deps
-                  -> dep
-projectDependency _ (SideLoaded _ deps) = projectDependency' deps
+getDependency :: ProjectDependency deps dep
+              => proxy dep
+              -> SideLoaded a deps
+              -> dep
+getDependency _ (SideLoaded _ deps) = projectDependency' deps
 
 --------------------------------------------------------------------------------
 -- | JSON Instances

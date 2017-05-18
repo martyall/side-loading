@@ -44,8 +44,8 @@ spec = do
 
     it "can do projections" $ do
       serializedAlbum <- inflate $ album
-      projectDependency (Proxy @ [Photo]) serializedAlbum `shouldBe` photos
-      projectDependency (Proxy @ Person) serializedAlbum `shouldBe` john
+      getDependency (Proxy @ [Photo]) serializedAlbum `shouldBe` photos
+      getDependency (Proxy @ Person) serializedAlbum `shouldBe` john
 
 --------------------------------------------------------------------------------
 -- | Photo
