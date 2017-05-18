@@ -1,5 +1,10 @@
 # side-loading
 
+[Introduction](#introduction)
+[Example](#example)
+[Traversals](#traversals)
+
+## Introduction
 This is a _really_ small library for doing server side loading for JSON using `Aeson`. The use case is as follows: Suppose you have a datatype like `Album` that _depends on_ a bunch of `Photo`s. By "depends on", we mean something like `Album` is a dataype with a field of type `[PhotoId]` which is the list of ids of all of the photos in the album. For example:
 
 ```haskell
@@ -64,7 +69,10 @@ Through some type level magic (including a functional dependency on the `Inflata
 ```haskell
 inflate :: Album -> SideLoaded Album [Person, [Photo]]
 ```
-which will grab all of this data and fill it in for you. Here is our toy example written out in full with a mocked database (you can compile and run this):
+which will grab all of this data and fill it in for you. 
+
+## Example
+Here is our toy example written out in full with a mocked database (you can compile and run this):
 
 ```haskell
 
@@ -171,3 +179,14 @@ Then the `toJSON . inflate $ album` gives us
 ```
 
 Do you also need versioning? If so check out [aeson-versioned](https://github.com/benweitzman/servant-aeson-versioned) and [aeson-versioned-sideloading](https://github.com/benweitzman/aeson-versioned-sideloading)
+
+## Traversals
+We also supply a polymorphic accessor `getDependency` to get the dependencies out of the `Sideloaded` type, for example
+
+```haskell
+getAlbumOwner :: Album -> Person 
+getAlbumOwner album = do
+inflatedAlbum <- inflate album
+owner <- getDependency (Proxy @ Person) inflatedAlbum
+return owner
+```
