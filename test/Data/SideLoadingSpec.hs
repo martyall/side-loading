@@ -37,7 +37,7 @@ spec = do
   describe "it should inflate albums" $ do
     it "lazily inflates" $ do
       _ <- writeIORef photosInflationCount 0
-      _ <- inflate album
+      _ <- getDependency (Proxy @ Person) <$> inflate album
       n <- readCount photosInflationCount
       n `shouldBe` 0
 
