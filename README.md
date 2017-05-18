@@ -1,8 +1,8 @@
 # side-loading
 
-[Introduction](#introduction)
-[Example](#example)
-[Traversals](#traversals)
+- [Introduction](#introduction)
+- [Example](#example)
+- [Traversals](#traversals)
 
 ## Introduction
 This is a _really_ small library for doing server side loading for JSON using `Aeson`. The use case is as follows: Suppose you have a datatype like `Album` that _depends on_ a bunch of `Photo`s. By "depends on", we mean something like `Album` is a dataype with a field of type `[PhotoId]` which is the list of ids of all of the photos in the album. For example:
