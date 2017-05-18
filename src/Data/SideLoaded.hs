@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ApplicativeDo #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
@@ -34,6 +35,8 @@ import Data.Singletons (Apply, type (~>))
 import Data.Singletons.TypeLits
 import Data.Text (Text, pack)
 
+import Debug.Trace
+
 --------------------------------------------------------------------------------
 -- | Dependency Lists
 --------------------------------------------------------------------------------
@@ -42,7 +45,7 @@ data DependencyList :: (* -> *) -> [*] -> [*] -> * where
   NilDeps :: DependencyList m '[] '[]
   (:&:) :: b -> DependencyList m bs fs -> DependencyList m (b:bs) (f:fs)
 
-(&:) :: ( Monad m
+(&:) :: ( Applicative m
         , Inflatable m b f
         )
      => b
@@ -74,7 +77,7 @@ class Inflatable m base full | base m -> full where
 
 -- | Anything can be expanded into itself in the trivial context
 instance Inflatable Identity base base where
-  inflator = return
+  inflator = pure
 
 -- | Indicate that a type has dependencies, and supply the uninflated types
 -- (order matters here).
@@ -87,16 +90,16 @@ class HasDependencies m a fs | a -> fs where
 ----------------------------------------------------------------------------------
 
 -- | Run the inflator in a monadic sequence.
-sequenceDependencyList :: ( Monad m
+sequenceDependencyList :: ( Applicative m
                           , CanInflate m bs fs
                           )
                        => DependencyList m bs fs
                        -> m (DependencyList Identity fs fs)
-sequenceDependencyList NilDeps = return NilDeps
+sequenceDependencyList NilDeps = pure NilDeps
 sequenceDependencyList (b :&: rest) = do
   f <- inflator b
   fs <- sequenceDependencyList rest
-  return (f :&: fs)
+  pure (f :&: fs)
 
 data SideLoaded a (deps :: [*]) = SideLoaded a (DependencyList Identity deps deps)
 
@@ -104,13 +107,13 @@ data SideLoaded a (deps :: [*]) = SideLoaded a (DependencyList Identity deps dep
 inflate :: ( HasDependencies m a fs
            , bs ~ DependencyBase a
            , CanInflate m bs fs
-           , Monad m
+           , Applicative m
            )
         => a
         -> m (SideLoaded a fs)
 inflate value =
   let dependencies = getDependencies value
-  in sequenceDependencyList dependencies >>= \deps -> return $ SideLoaded value deps
+  in SideLoaded value <$> sequenceDependencyList dependencies
 
 getDependency :: ProjectDependency deps dep
               => proxy dep

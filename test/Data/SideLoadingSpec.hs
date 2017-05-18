@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
@@ -28,11 +29,18 @@ import GHC.TypeLits
 import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 
+import Debug.Trace
 
 spec :: Spec
 spec = do
 
   describe "it should inflate albums" $ do
+    it "lazily inflates" $ do
+      _ <- writeIORef photosInflationCount 0
+      _ <- inflate album
+      n <- readCount photosInflationCount
+      n `shouldBe` 0
+
     it "can serialize dependencies" $ do
       serializedAlbum <- fmap (encode . toJSON) . inflate $ album
       let (mpair :: Maybe (Person, [Photo])) = decode serializedAlbum
@@ -44,7 +52,6 @@ spec = do
 
     it "can do projections" $ do
       inflatedAlbum <- inflate $ album
-      getDependency (Proxy @ [Photo]) inflatedAlbum `shouldBe` photos
       getDependency (Proxy @ Person) inflatedAlbum `shouldBe` john
 
     it "can do some traversals" $ do
@@ -78,7 +85,7 @@ john' = unsafePerformIO $ newIORef john
 {-# NOINLINE john #-}
 
 instance Inflatable IO PersonId Person where
-  inflator = const $ readIORef john'
+  inflator = const $ traceShowId <$> readIORef john'
 
 -- | Photo
 
@@ -103,8 +110,18 @@ photos' :: IORef [Photo]
 photos' = unsafePerformIO $ newIORef photos
 {-# NOINLINE photos #-}
 
+photosInflationCount :: IORef Int
+photosInflationCount = unsafePerformIO $ newIORef 0
+{-# NOINLINE photosInflationCount #-}
+
+tic :: IORef Int -> IORef a -> IO a
+tic counter ref = modifyIORef counter (+1) >> readIORef ref
+
+readCount :: IORef Int -> IO Int
+readCount = readIORef
+
 instance Inflatable IO [PhotoId] [Photo] where
-  inflator = const $ readIORef photos'
+  inflator = const $ tic photosInflationCount photos'
 
 instance HasDependencies IO Photo '[Album, Person] where
   type DependencyBase Photo = '[AlbumId, PersonId]
