@@ -41,7 +41,7 @@ import Data.Type.List (Map, Map')
 
 data DependencyList :: (* -> *) -> [*] -> [*] -> * where
   NilDeps :: DependencyList m '[] '[]
-  (:&:) :: Inflatable m b f => b -> DependencyList m bs fs -> DependencyList m (b:bs) (f:fs)
+  (:&:) :: b -> DependencyList m bs fs -> DependencyList m (b:bs) (f:fs)
 
 (&:) :: ( Monad m
         , Inflatable m b f
@@ -88,7 +88,11 @@ class HasDependencies m a fs | a -> fs where
 ----------------------------------------------------------------------------------
 
 -- | Run the inflator in a monadic sequence.
-sequenceDependencyList :: Monad m => DependencyList m bs fs -> m (DependencyList Identity fs fs)
+sequenceDependencyList :: ( Monad m
+                          , CanInflate m bs fs
+                          )
+                       => DependencyList m bs fs
+                       -> m (DependencyList Identity fs fs)
 sequenceDependencyList NilDeps = return NilDeps
 sequenceDependencyList (b :&: rest) = do
   f <- inflator b
