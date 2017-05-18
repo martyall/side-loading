@@ -31,12 +31,9 @@ import Data.Kind
 import Data.Proxy
 import Data.Functor.Identity (Identity(..))
 import Data.Singletons (Apply, type (~>))
-import Data.Singletons.Prelude
-import Data.Singletons.Prelude.Enum
-import Data.Promotion.Prelude
+import Data.Singletons.TypeLits
 import Data.Text (Text, pack)
 import Data.Type.List (Map, Map')
-import Data.Singletons.TypeLits
 
 --------------------------------------------------------------------------------
 -- | Dependency Lists
@@ -62,11 +59,11 @@ type family NamedDependency (a :: Type) :: Symbol
 class ProjectDependency bs b where
   projectDependency' :: forall fs m . DependencyList m bs fs -> b
 
-instance ProjectDependency (b : bs) b where
+instance {-# OVERLAPPING #-} ProjectDependency (b : bs) b where
   projectDependency' (b :&: _) = b
 
-instance ProjectDependency (b : bs) b =>  ProjectDependency (a : b : bs) b where
-  projectDependency' (a :&: (b :&: _)) = b
+instance {-# OVERLAPPABLE #-} ProjectDependency bs b =>  ProjectDependency (a : bs) b where
+  projectDependency' (a :&: bs ) = projectDependency' bs
 
 --------------------------------------------------------------------------------
 -- | Inflatables
