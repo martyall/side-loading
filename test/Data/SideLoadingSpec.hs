@@ -21,6 +21,7 @@ import Data.SideLoaded
 import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), encode, decode, (.:))
 import Data.Aeson.Types (Parser)
 import Data.Maybe (isJust)
+import Data.Proxy
 import GHC.Generics (Generic)
 import GHC.TypeLits
 import Test.Hspec
@@ -28,14 +29,20 @@ import Test.Hspec
 
 spec :: Spec
 spec = do
+
   describe "it should inflate albums" $ do
-    it "can print the correct result" $ do
+    it "can serialize dependencies" $ do
       serializedAlbum <- fmap (encode . toJSON) . inflate $ album
       let (mpair :: Maybe (Person, [Photo])) = decode serializedAlbum
       mpair `shouldSatisfy` isJust
       let (Just(o, ps)) = mpair
       o `shouldBe` john
       ps `shouldBe` photos
+
+
+    it "can do projections" $ do
+      serializedAlbum <- inflate $ album
+      projectDependency (Proxy @ [Photo]) serializedAlbum `shouldBe` photos
 
 --------------------------------------------------------------------------------
 -- | Photo

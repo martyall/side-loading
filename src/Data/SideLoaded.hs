@@ -20,8 +20,9 @@ module Data.SideLoaded
     , Inflatable(..)
     , DependencyList(NilDeps)
     , HasDependencies(..)
-    , SideLoaded
+    , SideLoaded(..)
     , inflate
+    , projectDependency
     , (&:)
     ) where
 
@@ -30,9 +31,12 @@ import Data.Kind
 import Data.Proxy
 import Data.Functor.Identity (Identity(..))
 import Data.Singletons (Apply, type (~>))
+import Data.Singletons.Prelude
+import Data.Singletons.Prelude.Enum
+import Data.Promotion.Prelude
 import Data.Text (Text, pack)
 import Data.Type.List (Map, Map')
-import GHC.TypeLits (Symbol, KnownSymbol, symbolVal)
+import Data.Singletons.TypeLits
 
 --------------------------------------------------------------------------------
 -- | Dependency Lists
@@ -56,13 +60,13 @@ infixr 5 &:
 type family NamedDependency (a :: Type) :: Symbol
 
 class ProjectDependency bs b where
-  projectDep :: Proxy b -> DependencyList m bs fs -> b
+  projectDependency' :: forall fs m . DependencyList m bs fs -> b
 
 instance ProjectDependency (b : bs) b where
-  projectDep _ (b :&: _) = b
+  projectDependency' (b :&: _) = b
 
-instance ProjectDependency bs b => ProjectDependency (a : bs) b where
-  projectDep p (_ :&: rest) = projectDep p rest
+instance ProjectDependency (b : bs) b =>  ProjectDependency (a : b : bs) b where
+  projectDependency' (a :&: (b :&: _)) = b
 
 --------------------------------------------------------------------------------
 -- | Inflatables
@@ -108,6 +112,12 @@ inflate value =
   let dependencies = getDependencies value
   in sequenceDependencyList dependencies >>= \deps -> return $ SideLoaded value deps
 
+projectDependency :: ProjectDependency deps dep
+                  => proxy dep
+                  -> SideLoaded a deps
+                  -> dep
+projectDependency _ (SideLoaded _ deps) = projectDependency' deps
+
 --------------------------------------------------------------------------------
 -- | JSON Instances
 --------------------------------------------------------------------------------
@@ -137,6 +147,7 @@ instance {-# OVERLAPPABLE #-}
   toJSON (SideLoaded _data deps) = object [ "data" .= toJSON _data
                                           , "dependencies" .= toJSON deps
                                           ]
+
 ----------------------------------------------------------------------------------
 ---- Type Families
 ----------------------------------------------------------------------------------
