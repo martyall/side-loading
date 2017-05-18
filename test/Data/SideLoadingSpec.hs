@@ -20,10 +20,12 @@ module Data.SideLoadingSpec (spec) where
 import Data.SideLoaded
 import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), encode, decode, (.:))
 import Data.Aeson.Types (Parser)
+import Data.IORef
 import Data.Maybe (isJust)
 import Data.Proxy
 import GHC.Generics (Generic)
 import GHC.TypeLits
+import System.IO.Unsafe (unsafePerformIO)
 import Test.Hspec
 
 
@@ -62,10 +64,15 @@ data Photo =
 instance ToJSON Photo
 instance FromJSON Photo
 
+photos :: [Photo]
 photos = [Photo 1 "At the Beach" 1 1, Photo 2 "In the Mountains" 1 1]
 
+photos' :: IORef [Photo]
+photos' = unsafePerformIO $ newIORef photos
+{-# NOINLINE photos #-}
+
 instance Inflatable IO [PhotoId] [Photo] where
-  inflator = const $ return photos
+  inflator = const $ readIORef photos'
 
 -- | Person
 
@@ -82,10 +89,14 @@ instance ToJSON Person
 instance FromJSON Person
 
 john :: Person
-john = Person 1 "Johnathon"
+john =  Person 1 "John"
+
+john' :: IORef Person
+john' = unsafePerformIO $ newIORef john
+{-# NOINLINE john #-}
 
 instance Inflatable IO PersonId Person where
-  inflator = const $ return john
+  inflator = const $ readIORef john'
 
 -- | Albums
 
