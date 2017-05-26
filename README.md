@@ -1,4 +1,4 @@
-# side-loading
+# zeppelin -- side-loading JSON
 
 - [Introduction](#introduction)
 - [Example](#example)
