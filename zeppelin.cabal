@@ -14,12 +14,30 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Data.SideLoaded
+  exposed-modules:     Data.Zeppelin.Internal
+                       Data.Zeppelin.Swagger
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , lens
                      , singletons
+                     , swagger2
                      , text
   default-language:    Haskell2010
+  default-extensions:  GADTs
+                     , FlexibleInstances
+                     , KindSignatures
+                     , DataKinds
+                     , TypeOperators
+                     , TypeFamilies
+                     , MultiParamTypeClasses
+                     , FunctionalDependencies
+                     , PolyKinds
+                     , ScopedTypeVariables
+                     , TypeInType
+                     , TypeApplications
+                     , UndecidableInstances
+                     , OverloadedStrings
+                     , TypeFamilyDependencies
 
 test-suite side-loading-test
   type:                exitcode-stdio-1.0
@@ -28,7 +46,7 @@ test-suite side-loading-test
   build-depends:       base
                      , hspec
                      , aeson
-                     , side-loading
+                     , zeppelin
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
 

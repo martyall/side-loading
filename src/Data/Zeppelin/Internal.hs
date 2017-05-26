@@ -1,26 +1,10 @@
-{-# LANGUAGE GADTs #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeInType #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilyDependencies #-}
-
-
-module Data.SideLoaded
+module Data.Zeppelin.Internal
     ( NamedDependency
     , Inflatable(..)
     , DependencyList(NilDeps)
     , HasDependencies(..)
     , SideLoaded(..)
+    , AllSatisfy
     , inflate
     , getDependency
     , (&:)
