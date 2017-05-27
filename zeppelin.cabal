@@ -14,20 +14,24 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Data.Zeppelin.Internal
+  exposed-modules:     Data.Zeppelin
+  other-modules:       Data.Zeppelin.Internal
                        Data.Zeppelin.Swagger
   build-depends:       base >= 4.7 && < 5
                      , aeson
+                     , insert-ordered-containers
                      , lens
                      , singletons
                      , swagger2
                      , text
+                     , unordered-containers
   default-language:    Haskell2010
   default-extensions:  GADTs
                      , FlexibleInstances
                      , KindSignatures
                      , DataKinds
                      , TypeOperators
+                     , TypeInType
                      , TypeFamilies
                      , MultiParamTypeClasses
                      , FunctionalDependencies

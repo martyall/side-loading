@@ -1,14 +1,4 @@
-module Data.Zeppelin.Internal
-    ( NamedDependency
-    , Inflatable(..)
-    , DependencyList(NilDeps)
-    , HasDependencies(..)
-    , SideLoaded(..)
-    , AllSatisfy
-    , inflate
-    , getDependency
-    , (&:)
-    ) where
+module Data.Zeppelin.Internal where
 
 import Data.Aeson (ToJSON(..), Value, (.=), object)
 import Data.Kind
@@ -82,6 +72,7 @@ sequenceDependencyList (b :&: rest) = do
   fs <- sequenceDependencyList rest
   return (f :&: fs)
 
+-- | Side loaded represents a piece of data together with its inflated dependencies.
 data SideLoaded a (deps :: [*]) = SideLoaded a (DependencyList Identity deps deps)
 
 -- | Run the inflators and wrap in the SideLoaded type.
@@ -106,6 +97,7 @@ getDependency _ (SideLoaded _ deps) = projectDependency' deps
 -- | JSON Instances
 --------------------------------------------------------------------------------
 
+-- | A helper class for the JSON instances
 class ToKeyValueList a where
   toKeyValueList :: a -> [(Text, Value)]
 

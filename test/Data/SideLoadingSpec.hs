@@ -17,7 +17,7 @@
 
 module Data.SideLoadingSpec (spec) where
 
-import Data.Zeppelin.Internal
+import Data.Zeppelin
 import Data.Aeson (ToJSON(..), FromJSON(..), Value(..), encode, decode, (.:))
 import Data.Aeson.Types (Parser)
 import Data.IORef
